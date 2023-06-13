@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Ichiraku Ramen</title>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+        integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
+        integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN"
+        crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"
+        integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"
+        crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+        integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+        crossorigin="anonymous"></script>
+        <link rel="icon" href="./images/naruto-icon-14688.png">
+         <link rel="stylesheet" href="./style.css">
+</head>
+
+<body>
+   
+  <div class="overLay" id="overlay">
+      <button onclick="playAgain()" class="btn btn-warning btn-lg ">Play Again</button>
+  </div>
+    <div class="container-fluid text-center  " id="joinCon">
+       
+       <div class="row">
+           <div class="col-lg-8 col-sm-2" style="display: flex;justify-content: center;align-items: center;">
+
+           </div>
+           <div class="col-lg-4 joinCon">
+            <form>
+                <div class="form-group">
+                    <input type="text" class="form-control text-center roomId" placeholder="room Id" id="roomId" autocomplete="off" >
+                </div>
+                <div class="form-group">
+                    <input type="text" class="form-control text-center playerName" placeholder="Player Name" id="playerName" autocomplete="off">
+                </div>
+                <div>
+                    <button type="button" class="btn btn-warning btn-lg btn-block " id="joinBtn" onclick="joinRoom({roomId:roomId.value,playerName:playerName.value})">Join OR Create</button>
+                    <!-- <button type="button" class="btn btn-primary" onclick="test(roomId.value)">test</button> -->
+                </div>
+            </form>
+        </div>
+       </div>
+    
+       
+    </div>
+    <div class="gameBord" id="gameBord">
+    <div class="scoreBord" id="scoreBord"></div>
+       <div class="food" id='food'> </div>
+</div>
+
+</body>
+<style>
+
+
+    .timer{
+        width: 100px;
+        height: 100px;
+        color: white;
+        position: absolute;
+        right: 0;
+        display: grid;
+        font-weight: 900;
+        place-items: center;
+    }
+    .timer h1{
+        font-weight: 900;
+        font-size: 3rem;
+    }
+    .btn.btn-warning.btn-lg.btn-block {
+ font-weight: bold;
+ font-style: normal;
+ font-size: 25px;
+}
+
+#roomId {
+ font-size: 20px;
+ font-weight: bold;
+ font-style: italic;
+ color: rgb(7, 7, 7);
+}
+
+#playerName {
+ font-size: 20px;
+ font-weight: bold;
+ font-style: italic;
+ color: rgb(0, 0, 0);
+}
+    .overLay{
+        position: fixed;
+        height: 100%;
+        width: 100%;
+        left: 0;
+        top: 0;
+        background-color: rgba(0, 0, 0, 0.589);
+        z-index: 100;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column-reverse;
+    }
+    .scoreBord{
+        width:300px ;
+        height: 130px;
+        background-color: rgba(165, 42, 42, 0.219);
+        position: absolute;
+        left: 50%;
+       -webkit-transform: translateX(-50%);
+        transform: translateX(-50%);
+        display: flex;
+        justify-content: space-around;
+        padding: 5px;
+        color: white;
+     
+    }
+    .gameBord {
+        display: none;
+        position: fixed;
+        width: 100%;
+        height: 100%;
+        left: 0;
+        top: 0;
+        background-image: linear-gradient(to right, #ab561e,#c58531,#eecd3d);
+    }
+
+    body {
+        position: relative;
+       background-image: linear-gradient(to right, #1e45ab,#127bd2,#1e45ab);
+       background-image: url('./images/naruto-ramen-1118729-1280x0.jpeg');
+       background-repeat: no-repeat;
+       background-size: cover;
+     
+    }
+
+   
+
+
+    .food{
+        position: absolute;
+        width: 100px;
+        height: 100px;
+       background-image: url('./images/a825fe274b4e2f2c8077d10475c3e428.png');
+       background-repeat: no-repeat;
+       background-size: contain;
+   
+    }
+    * {
+      touch-action: manipulation !important;
+  }
+</style>
+<script src="/socket.io/socket.io.js"></script>
+<script>
+bgAudio=new Audio('./music/narutos-theme-song.mp3')
+winningAudio= new Audio('./music/naruto_shippuden.mp3')
+loosingAudio= new Audio('./music/pacman_dies.mp3')
+
+moveAudio=new Audio('./music/pap_.mp3')
+eatAudio=new Audio('./music/slurp.mp3')
+window.addEventListener("click", event => {
+    bgAudio.volume = 0.020  ;
+    bgAudio.loop=false
+    bgAudio.play();
+});
+function playMovement(){
+    moveAudio.loop=false
+    moveAudio.play()
+}
+function playEatingAudio(){
+    eatAudio.loop=false
+    eatAudio.play()
+}
+function playwinningAudio(){
+    winningAudio.loop=false
+    winningAudio.play()
+}
+function playLossingAudio(){
+    loosingAudio.loop=false
+    loosingAudio.play()
+}
+
+
+    var socket = io.connect('/', { reconnect: false });
+    var room
+    var player
+    var points=[]
+    function joinRoom({roomId,playerName}) {
+        console.log(playerName);
+       room=roomId
+        socket.emit("joinRoom", {playerName:playerName,roomId:roomId}, (res) => {
+            console.log(res);
+            player=playerName
+            document.getElementById('joinBtn').innerText='Waiting for others'
+        })
+    }
+
+
+
+
+
+    function test(roomId) {
+        socket.emit("test", roomId, (res) => {
+            console.log(res);
+        })
+    }
+
+    let joinCon = document.getElementById('joinCon')
+        let gameBord = document.getElementById('gameBord')
+    socket.on('response', (res) => {
+        console.log(res)
+       
+        joinCon.style.display = 'none'
+        gameBord.style.display = 'block' 
+        start()
+        res.players.forEach((element,i) => {
+            points.push({playerName:element.playerName,points:0})
+
+            addPlayer({playerName:element.playerName,index:i})  
+        });
+  
+    })
+
+function start(){
+
+         const vw = Math.max(document.documentElement.clientWidth || 0, window.innerWidth || 0)
+         const vh = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0)
+         socket.emit('start',{room:room,vh:vh,vw:vw},()=>{
+      
+    })
+}
+socket.on("addFood",({x,y})=>{
+
+    document.addEventListener("keyup",onKeyUp)
+
+  document.addEventListener("mouseup",onKeyUp)
+     timer()
+    addFood({y:y,x:x})
+})
+    //game logic
+ 
+ 
+    let food=document.getElementById('food')
+   function addPlayer({playerName,index})
+   {
+    let player=document.createElement('div')
+    let points=document.createElement('h2')
+    points.setAttribute('id',`${playerName}score`)
+     points.innerHTML=0
+     points.style.paddingTop='60px'
+     points.style.textAlign='center'
+     player.style.width='60px'
+     player.style.height='60px'
+      player.appendChild(points)
+      scoreBord.appendChild(player)
+
+    let d=document.createElement('div')
+      d.setAttribute('id',`${playerName}`)
+      d.style.width='100px'
+      d.style.height='50px'
+      d.style.position='absolute'
+      d.style.display='flex'
+      d.style.justifyContent='center'
+      d.style.paddingTop='100px'
+      let text=document.createElement('h2')
+      text.innerHTML=playerName
+      d.appendChild(text)
+      switch (index) {
+          case 0:
+          d.style.top='100px'
+          d.style.backgroundImage="url('./images/f749bc8562cc914c4cd393b7a526b033.png')"
+          player.style.backgroundImage="url('./images/f749bc8562cc914c4cd393b7a526b033.png')"
+          d.style.backgroundRepeat='no-repeat'
+          d.style.backgroundSize='cover'
+          player.style.backgroundRepeat='no-repeat'
+          player.style.backgroundSize='cover'
+          
+              break;
+         case 1:
+             d.style.left='100px' 
+             d.style.backgroundImage="url('./images/Sasuke-Uchiha-Step-10.png')"
+             player.style.backgroundImage="url('./images/Sasuke-Uchiha-Step-10.png')"
+             d.style.backgroundRepeat='no-repeat'
+          d.style.backgroundSize='cover'
+          player.style.backgroundRepeat='no-repeat'
+          player.style.backgroundSize='cover'
+          
+            break;
+            case 2:
+             d.style.left='150px' 
+             d.style.backgroundColor='blue'
+            break;
+            case 3:
+             d.style.top='150px' 
+             d.style.backgroundColor='yellow'
+            break;
+          default:
+              break;
+      }
+      gameBord.appendChild(d) 
+   }
+  
+  function removeFood(){
+    let food=document.getElementById('food')
+    food.style.display='none'
+    start()
+
+  }
+
+
+
+  function addFood({x,y}){
+       let food=document.getElementById('food')
+       food.style.left=x
+       food.style.top=y
+       food.style.display="block" 
+      
+  }    
+function onKeyUp(){
+    playMovement()
+    socket.emit('keyUp',{player:player,roomId:room},(res)=>{})
+}
+  
+
+socket.on('keyUpResponse',(res)=>{
+    console.log(res);
+  
+    movement(res.player)
+})
+//   document.addEventListener("mouseup",(e)=>{
+//     movement()
+//   })
+
+  
+  function movement(player)
+    {
+        let d = document.getElementById(`${player}`)
+        let fLeft=food.getBoundingClientRect().left
+        let fTop=food.getBoundingClientRect().top
+       let left=d.getBoundingClientRect().left
+       let top=d.getBoundingClientRect().top
+       if(fLeft!=left && fLeft>left)
+       {
+           d.style.left=d.getBoundingClientRect().left+50 +"px"
+           
+       }
+       if(fLeft!=left && fLeft<left)
+       {
+           d.style.left=d.getBoundingClientRect().left-50+"px"
+          
+       }
+       if(fTop!=top && fTop >top)
+       {
+           d.style.top=d.getBoundingClientRect().top+50+"px"
+           
+       }
+
+       if(fTop!=top && fTop<top)
+       {
+           d.style.top=d.getBoundingClientRect().top-50+"px"
+           
+       }
+       if(fTop==top && fLeft==left){
+         removeFood()
+playEatingAudio()
+         socket.emit('addPoint',{roomId:room,player:d.id,points:points},(res)=>{
+           
+                     })
+       }
+    }
+
+    socket.on("addPointListener",(res)=>{
+        points=[]
+        points=res
+        points.forEach(ele=>{
+            document.getElementById(`${ele.playerName}score`).innerHTML=ele.points
+        })
+    })
+
+
+
+
+
+socket.on("resultsReponse",({winner})=>{
+    if(winner.playerName==player){
+playwinningAudio()
+    }
+    else{playLossingAudio()}
+    document.removeEventListener('keyup',onKeyUp)
+    document.removeEventListener('mouseup',onKeyUp)
+    clearTimeout(t)
+    console.log(winner);
+ let overLay=   document.getElementById('overlay')
+ overLay.style.display='flex'
+   let winnerText=document.createElement('h1')
+     winnerText.innerText=`${winner.playerName} won  with score ${winner.points}`
+     overLay.appendChild(winnerText)
+     socket.disconnect()
+})
+
+var t
+function timer(){
+    t=setTimeout(()=>{
+    socket.emit('ResultsResquest',{roomId:room,points:points})
+}
+,60000)
+}
+function playAgain(){
+location.reload()
+}
+
+window.onbeforeunload = ()=>{
+    socket.emit("reload",{roomId:room,playAgain:player},(res)=>{})
+
+}
+
+
+
+</script>
+
+</html>
